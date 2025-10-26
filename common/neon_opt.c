@@ -2,8 +2,15 @@
 // NEON SIMD Optimizations Implementation
 
 #include <string.h>
-#include "neon_opt.h"
-#include "common.h"
+#include <stdint.h>
+#include <stddef.h>
+
+#ifdef __ARM_NEON__
+#include <arm_neon.h>
+#endif
+
+// Forward declaration of the scalar function
+uint32_t rgb565_to_rgb888(uint16_t c);
 
 // RGB565 to RGB888 conversion - vectorized version
 void rgb565_to_rgb888_neon(const uint16_t *src, uint32_t *dst, size_t count)
