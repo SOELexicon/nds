@@ -267,5 +267,8 @@ char* upper_string(char *);
 uint64_t get_tick_count_ms(void);
 uint32_t rgb565_to_rgb888(uint16_t);
 
+// NEON SIMD optimizations
+#include "neon_opt.h"
+
 #endif
 
