@@ -4,7 +4,7 @@ CFLAGS  += -I.
 LDFLAGS += $(MORE_LDFLAGS)
 LDFLAGS += -fPIC
 LDFLAGS += -shared
-SOURCES  = common.c
+SOURCES  = common.c neon_opt.c
 
 ifneq ($(MOD),ut)
 ifneq ($(MOD),qx1050)

@@ -601,3 +601,134 @@ uint32_t rgb565_to_rgb888(uint16_t c)
     return (r << 16) | (g << 8) | b;
 }
 
+#if defined(UT)
+TEST(common, rgb565_to_rgb888_neon)
+{
+    // Test RGB565 to RGB888 NEON conversion
+    uint16_t src[16];
+    uint32_t dst_neon[16];
+    uint32_t dst_scalar[16];
+    
+    // Initialize test data with various color values
+    src[0] = 0xF800;  // Pure red
+    src[1] = 0x07E0;  // Pure green
+    src[2] = 0x001F;  // Pure blue
+    src[3] = 0xFFFF;  // White
+    src[4] = 0x0000;  // Black
+    src[5] = 0x7BEF;  // Light gray
+    src[6] = 0x4208;  // Dark gray
+    src[7] = 0xFC00;  // Yellow
+    for (int i = 8; i < 16; i++) {
+        src[i] = (uint16_t)(i * 4321);  // Various values
+    }
+    
+    // Convert using NEON function
+    rgb565_to_rgb888_neon(src, dst_neon, 16);
+    
+    // Convert using scalar function for comparison
+    for (int i = 0; i < 16; i++) {
+        dst_scalar[i] = rgb565_to_rgb888(src[i]);
+    }
+    
+    // Compare results
+    for (int i = 0; i < 16; i++) {
+        TEST_ASSERT_EQUAL_HEX32(dst_scalar[i], dst_neon[i]);
+    }
+}
+
+TEST(common, alpha_blend_neon)
+{
+    // Test alpha blending
+    uint32_t dst[8];
+    uint32_t src[8];
+    
+    // Initialize with test patterns
+    for (int i = 0; i < 8; i++) {
+        dst[i] = 0xFF000000;  // Black with full alpha
+        src[i] = 0xFFFFFFFF;  // White with full alpha
+    }
+    
+    // Test with 50% alpha
+    alpha_blend_neon(dst, src, 128, 8);
+    
+    // Check that blending occurred (should be around 0xFF7F7F7F for 50% blend)
+    for (int i = 0; i < 8; i++) {
+        uint8_t *pixel = (uint8_t *)&dst[i];
+        // Each channel should be approximately 127-128 (half of 255)
+        TEST_ASSERT_UINT8_WITHIN(2, 127, pixel[0]);  // R
+        TEST_ASSERT_UINT8_WITHIN(2, 127, pixel[1]);  // G
+        TEST_ASSERT_UINT8_WITHIN(2, 127, pixel[2]);  // B
+    }
+}
+
+TEST(common, memset_neon)
+{
+    uint8_t buffer[256];
+    
+    // Fill with pattern
+    for (int i = 0; i < 256; i++) {
+        buffer[i] = i;
+    }
+    
+    // Use NEON memset to fill with 0xAA
+    memset_neon(buffer, 0xAA, 256);
+    
+    // Verify all bytes are set correctly
+    for (int i = 0; i < 256; i++) {
+        TEST_ASSERT_EQUAL_HEX8(0xAA, buffer[i]);
+    }
+    
+    // Test partial fill
+    memset_neon(buffer, 0x55, 100);
+    for (int i = 0; i < 100; i++) {
+        TEST_ASSERT_EQUAL_HEX8(0x55, buffer[i]);
+    }
+    for (int i = 100; i < 256; i++) {
+        TEST_ASSERT_EQUAL_HEX8(0xAA, buffer[i]);
+    }
+}
+
+TEST(common, mix_audio_neon)
+{
+    int16_t dst[16];
+    int16_t src[16];
+    
+    // Test normal mixing
+    for (int i = 0; i < 16; i++) {
+        dst[i] = 100;
+        src[i] = 200;
+    }
+    
+    mix_audio_neon(dst, src, 16);
+    
+    for (int i = 0; i < 16; i++) {
+        TEST_ASSERT_EQUAL_INT16(300, dst[i]);
+    }
+    
+    // Test saturation at maximum
+    for (int i = 0; i < 16; i++) {
+        dst[i] = 30000;
+        src[i] = 30000;
+    }
+    
+    mix_audio_neon(dst, src, 16);
+    
+    for (int i = 0; i < 16; i++) {
+        TEST_ASSERT_EQUAL_INT16(32767, dst[i]);  // Should saturate to max
+    }
+    
+    // Test saturation at minimum
+    for (int i = 0; i < 16; i++) {
+        dst[i] = -30000;
+        src[i] = -30000;
+    }
+    
+    mix_audio_neon(dst, src, 16);
+    
+    for (int i = 0; i < 16; i++) {
+        TEST_ASSERT_EQUAL_INT16(-32768, dst[i]);  // Should saturate to min
+    }
+}
+#endif
+
+
