@@ -26,6 +26,7 @@ sdl2/test/configure~
 alsa/libasound.so.2
 
 common/libcommon.so
+common/*.o
 
 detour/libdtr.so
 drastic/res/nds.cfg
